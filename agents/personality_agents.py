@@ -15,16 +15,18 @@ api_key = os.getenv("OPENROUTER_API_KEY")
 if not api_key:
     print("ERROR: No API key found in environment variables!")
     print("Please make sure OPENROUTER_API_KEY is set in your .env file")
+    # For deployment, we'll initialize client as None and check later
+    client = None
 else:
     print("SUCCESS: API Key loaded from environment")
     print(f"API Key starts with: {api_key[:10]}...")
     print(f"API Key length: {len(api_key)}")
-
-# OpenAI Client Configuration for OpenRouter
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=api_key
-)
+    
+    # OpenAI Client Configuration for OpenRouter
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key
+    )
 
 # Personality prompts dictionary - concise versions
 PERSONALITY_PROMPTS = {
@@ -51,8 +53,8 @@ class PersonalityAgent:
         """Generate a response using OpenAI client"""
         try:
             # Check if API key is available
-            if not api_key:
-                return "ERROR: API key not found. Please add OPENROUTER_API_KEY to your .env file."
+            if not api_key or not client:
+                return "ERROR: API key not configured. Please set OPENROUTER_API_KEY in Streamlit Cloud secrets."
             
             # Make API call to OpenRouter
             response = client.chat.completions.create(
