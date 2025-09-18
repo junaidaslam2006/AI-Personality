@@ -1,81 +1,85 @@
 import os
 from typing import Dict, List
-from langchain_openai import ChatOpenAI
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from langchain.schema import BaseOutputParser
+from openai import OpenAI
 from dotenv import load_dotenv
+from pathlib import Path
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from .env file
+env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
-# LangChain Configuration
-LANGCHAIN_CONFIG = {
-    "base_url": "https://openrouter.ai/api/v1",
-    "api_key": os.getenv("OPENROUTER_API_KEY"),
-    "model": "deepseek/deepseek-chat",
-    "max_tokens": 300,
-    "temperature": 0.8,
-    "streaming": False,
-    "verbose": False
-}
+# Debug: Print to check if API key is loaded
+api_key = os.getenv("OPENROUTER_API_KEY")
 
-# Personality prompts dictionary
+# Fallback to hardcoded key for testing if env var isn't working
+if not api_key or api_key == "your_api_key_here":
+    api_key = "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"
+    print("Using hardcoded API key as fallback")
+else:
+    print(f"API Key loaded from env: {'Yes' if api_key else 'No'}")
+
+if api_key:
+    print(f"API Key starts with: {api_key[:15]}...")
+    print(f"API Key length: {len(api_key)}")
+else:
+    print("API Key is None or empty")
+
+# OpenAI Client Configuration for OpenRouter
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=api_key
+)
+
+# Personality prompts dictionary - concise versions
 PERSONALITY_PROMPTS = {
-    "motivator": "You are THE MOTIVATOR - an incredibly positive, encouraging AI personality. Your mission is to inspire and uplift people no matter what challenges they face. Always be extremely positive, use motivational language, focus on growth and potential, turn setbacks into comebacks, and give people confidence and hope.",
+    "motivator": "You are THE MOTIVATOR - an incredibly positive, encouraging AI personality. Your mission is to inspire and uplift people. Always be extremely positive, use motivational language, focus on growth and potential, turn setbacks into comebacks. KEEP RESPONSES 30-50 WORDS.",
     
-    "angry_coach": "You are THE ANGRY COACH - a tough-love, no-nonsense AI personality who tells people what they NEED to hear, not what they WANT to hear. Be direct and brutally honest, impatient with excuses, focused on action and accountability, use tough love approach, and push people out of their comfort zone.",
+    "angry_coach": "You are THE ANGRY COACH - a tough-love, no-nonsense AI personality who tells people what they NEED to hear, not what they WANT to hear. Be direct and brutally honest, impatient with excuses, focused on action and accountability. KEEP RESPONSES 30-50 WORDS.",
     
-    "comedian": "You are THE COMEDIAN - a witty, humorous AI personality who finds the funny side of any situation and uses humor to help people feel better. Always look for humor in situations, use jokes and funny observations, keep things light-hearted and playful, help people laugh at their problems, and use creative analogies.",
+    "comedian": "You are THE COMEDIAN - a witty, humorous AI personality who finds the funny side of any situation and uses humor to help people feel better. Always look for humor, use jokes and funny observations, keep things light-hearted and playful. KEEP RESPONSES 30-50 WORDS.",
     
-    "philosopher": "You are THE PHILOSOPHER - a wise, contemplative AI personality who explores the deeper meaning behind life's challenges and offers profound insights. Be a deep thinker who explores underlying meanings, draw wisdom from philosophical traditions, ask profound questions, see the bigger picture, and connect problems to universal human experiences.",
+    "philosopher": "You are THE PHILOSOPHER - a wise, contemplative AI personality who explores the deeper meaning behind life's challenges and offers profound insights. Be a deep thinker, draw wisdom from philosophical traditions, see the bigger picture. KEEP RESPONSES 30-50 WORDS.",
     
-    "practical": "You are THE PRACTICAL ONE - a logical, action-oriented AI personality who focuses on concrete solutions and practical steps to solve problems. Be extremely practical and solution-focused, break down problems into actionable steps, use logical approach, focus on what can be controlled, and give concrete implementable advice."
+    "practical": "You are THE PRACTICAL ONE - a logical, action-oriented AI personality who focuses on concrete solutions and practical steps. Be extremely practical and solution-focused, break down problems into actionable steps, focus on what can be controlled. KEEP RESPONSES 30-50 WORDS."
 }
-
-class PersonalityResponseParser(BaseOutputParser):
-    """Custom output parser for personality responses"""
-    
-    def parse(self, text: str) -> str:
-        """Parse the LLM output and return clean response"""
-        return text.strip()
 
 class PersonalityAgent:
-    """Base class for AI personality agents using LangChain"""
+    """Base class for AI personality agents using OpenAI client"""
     
     def __init__(self, name: str, personality_key: str, emoji: str):
         self.name = name
         self.emoji = emoji
-        
-        # Get LangChain LLM instance
-        self.llm = ChatOpenAI(**LANGCHAIN_CONFIG)
-        
-        # Create prompt template using predefined prompts
-        system_prompt = PERSONALITY_PROMPTS.get(personality_key, "You are a helpful AI assistant.")
-        
-        self.prompt_template = PromptTemplate(
-            input_variables=["user_input"],
-            template=f"{system_prompt}\n\nUser Question: {{user_input}}\n\nResponse:"
-        )
-        
-        # Create LLM chain
-        self.chain = LLMChain(
-            llm=self.llm,
-            prompt=self.prompt_template,
-            output_parser=PersonalityResponseParser(),
-            verbose=False
-        )
+        self.system_prompt = PERSONALITY_PROMPTS.get(personality_key, "You are a helpful AI assistant.")
     
     def respond(self, user_input: str) -> str:
-        """Generate a response using LangChain"""
+        """Generate a response using OpenAI client"""
         try:
-            if not os.getenv("OPENROUTER_API_KEY"):
-                return "❌ API key not found! Please check your .env file."
+            # Check if API key is available
+            if not api_key:
+                return "❌ API key not found in .env file. Please add OPENROUTER_API_KEY to your .env file."
             
-            response = self.chain.run(user_input=user_input)
-            return response
+            # Make API call to OpenRouter
+            response = client.chat.completions.create(
+                model="deepseek/deepseek-chat",
+                messages=[
+                    {"role": "system", "content": f"{self.system_prompt}\n\nIMPORTANT: Keep your response between 30-50 words. Be concise and direct."},
+                    {"role": "user", "content": user_input}
+                ],
+                max_tokens=80,  # Reduced for shorter responses
+                temperature=0.8
+            )
+            
+            return response.choices[0].message.content.strip()
+            
         except Exception as e:
-            return f"❌ Error: Unable to get response. Please check your API key and try again."
+            error_msg = str(e).lower()
+            print(f"Debug - Full error: {str(e)}")  # Debug logging
+            if "api" in error_msg or "key" in error_msg or "auth" in error_msg or "unauthorized" in error_msg:
+                return f"❌ API authentication failed. Please check your OpenRouter API key is valid and has credits."
+            elif "network" in error_msg or "connection" in error_msg:
+                return "❌ Network error. Please check your internet connection."
+            else:
+                return f"❌ Error: {str(e)}"
 
 class MotivatorAgent(PersonalityAgent):
     """The encouraging, positive motivator personality"""

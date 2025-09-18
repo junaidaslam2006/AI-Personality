@@ -2,6 +2,10 @@ import streamlit as st
 import os
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent
