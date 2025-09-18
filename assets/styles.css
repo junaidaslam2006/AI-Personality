@@ -1,0 +1,141 @@
+/* AI Personality Panel Custom Styles */
+
+:root {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --motivator-color: #FF6B6B;
+    --coach-color: #DC143C;
+    --comedian-color: #FFD700;
+    --philosopher-color: #9B59B6;
+    --practical-color: #2ECC71;
+    --therapist-color: #3498DB;
+}
+
+/* Main layout */
+.main .block-container {
+    padding-top: 2rem;
+    max-width: 1200px;
+}
+
+/* Header animations */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.main-header {
+    animation: fadeInDown 1s ease-out;
+}
+
+/* Card hover effects */
+.personality-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.personality-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: rotate(45deg);
+    transition: all 0.6s;
+    opacity: 0;
+}
+
+.personality-card:hover::before {
+    animation: shimmer 0.6s ease-in-out;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%) rotate(45deg); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateX(100%) rotate(45deg); opacity: 0; }
+}
+
+/* Loading animation */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(102, 126, 234, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .personality-card {
+        margin: 10px 0;
+        padding: 15px;
+    }
+    
+    .main-header {
+        font-size: 2rem !important;
+    }
+    
+    .input-container {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .input-container {
+        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    }
+    
+    .personality-response {
+        background: rgba(0,0,0,0.2);
+    }
+}
+
+/* Accessibility improvements */
+.personality-card:focus-within {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.stButton > button:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary-color);
+}
