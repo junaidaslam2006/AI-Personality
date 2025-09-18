@@ -4,11 +4,15 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.schema import BaseOutputParser
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # LangChain Configuration
 LANGCHAIN_CONFIG = {
     "base_url": "https://openrouter.ai/api/v1",
-    "api_key": "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",
+    "api_key": os.getenv("OPENROUTER_API_KEY"),
     "model": "deepseek/deepseek-chat",
     "max_tokens": 300,
     "temperature": 0.8,
@@ -65,10 +69,13 @@ class PersonalityAgent:
     def respond(self, user_input: str) -> str:
         """Generate a response using LangChain"""
         try:
+            if not os.getenv("OPENROUTER_API_KEY"):
+                return "❌ API key not found! Please check your .env file."
+            
             response = self.chain.run(user_input=user_input)
             return response
         except Exception as e:
-            return f"Sorry, I'm having trouble responding right now. Please try again! (Error: {str(e)})"
+            return f"❌ Error: Unable to get response. Please check your API key and try again."
 
 class MotivatorAgent(PersonalityAgent):
     """The encouraging, positive motivator personality"""

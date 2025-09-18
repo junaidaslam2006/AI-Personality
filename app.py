@@ -25,13 +25,19 @@ st.markdown("""
     border-radius: 10px;
     margin: 10px 0;
     min-height: 100px;
-    background-color: #f9f9f9;
+    background-color: #f8f9fa;
+    color: #333333;
 }
 .personality-title {
     font-weight: bold;
     font-size: 18px;
     margin-bottom: 10px;
-    color: #333;
+    color: #2c3e50;
+}
+.output-text {
+    color: #444444;
+    line-height: 1.5;
+    font-size: 14px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -71,7 +77,7 @@ def main():
                     st.markdown(f"""
                     <div class="output-box">
                         <div class="personality-title">{title}</div>
-                        <div>{responses.get(personality_key, "No response")}</div>
+                        <div class="output-text">{responses.get(personality_key, "No response")}</div>
                     </div>
                     """, unsafe_allow_html=True)
         else:
