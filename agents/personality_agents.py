@@ -6,23 +6,19 @@ from pathlib import Path
 
 # Load environment variables from .env file
 env_path = Path(__file__).parent.parent / '.env'
-load_dotenv(dotenv_path=env_path)
+load_dotenv(dotenv_path=env_path, override=True)  # Override existing env vars
 
 # Debug: Print to check if API key is loaded
 api_key = os.getenv("OPENROUTER_API_KEY")
 
-# Fallback to hardcoded key for testing if env var isn't working
-if not api_key or api_key == "your_api_key_here":
-    api_key = "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"
-    print("Using hardcoded API key as fallback")
+# Check if API key is loaded properly
+if not api_key:
+    print("ERROR: No API key found in environment variables!")
+    print("Please make sure OPENROUTER_API_KEY is set in your .env file")
 else:
-    print(f"API Key loaded from env: {'Yes' if api_key else 'No'}")
-
-if api_key:
-    print(f"API Key starts with: {api_key[:15]}...")
+    print("SUCCESS: API Key loaded from environment")
+    print(f"API Key starts with: {api_key[:10]}...")
     print(f"API Key length: {len(api_key)}")
-else:
-    print("API Key is None or empty")
 
 # OpenAI Client Configuration for OpenRouter
 client = OpenAI(
@@ -56,7 +52,7 @@ class PersonalityAgent:
         try:
             # Check if API key is available
             if not api_key:
-                return "❌ API key not found in .env file. Please add OPENROUTER_API_KEY to your .env file."
+                return "ERROR: API key not found. Please add OPENROUTER_API_KEY to your .env file."
             
             # Make API call to OpenRouter
             response = client.chat.completions.create(
@@ -73,13 +69,12 @@ class PersonalityAgent:
             
         except Exception as e:
             error_msg = str(e).lower()
-            print(f"Debug - Full error: {str(e)}")  # Debug logging
-            if "api" in error_msg or "key" in error_msg or "auth" in error_msg or "unauthorized" in error_msg:
-                return f"❌ API authentication failed. Please check your OpenRouter API key is valid and has credits."
+            if "401" in error_msg or "unauthorized" in error_msg or "user not found" in error_msg:
+                return "ERROR: API key authentication failed. Please check if your OpenRouter API key is valid."
             elif "network" in error_msg or "connection" in error_msg:
-                return "❌ Network error. Please check your internet connection."
+                return "ERROR: Network error. Please check your internet connection."
             else:
-                return f"❌ Error: {str(e)}"
+                return f"ERROR: Service temporarily unavailable. Please try again."
 
 class MotivatorAgent(PersonalityAgent):
     """The encouraging, positive motivator personality"""
